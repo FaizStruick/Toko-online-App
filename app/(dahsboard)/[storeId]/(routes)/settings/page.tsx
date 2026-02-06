@@ -3,17 +3,20 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { SettingsForm } from "./components/settings-form";
 
+export const revalidate = 0;
+
 interface SettingsPageProps {
-    params: {
-        storeId: string;
-    }
+    
+    params: Promise<{storeId: string}>
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = async ({
     params
 }) => {
 
-    const {userId} = await auth()
+    const {userId} = await auth();
+
+    const resolvedParamas = await params;
 
     if(!userId){
         redirect('/sign-in')
@@ -21,7 +24,7 @@ const SettingsPage: React.FC<SettingsPageProps> = async ({
 
     const store = await db.store.findFirst({
         where: {
-            id: params.storeId,
+            id: resolvedParamas.storeId,
             userId
         }
     })
