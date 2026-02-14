@@ -10,7 +10,14 @@ export async function POST(
         const {userId} = await auth()
         const body = await req.json();
 
-        const {label, imageUrl} = body;
+        const {
+            name,
+            price,
+            categoryId,
+            images,
+            isFeatured,
+            isArchived,
+        } = body;
 
         const params = await props.params;
 
@@ -18,12 +25,20 @@ export async function POST(
             return new NextResponse("Unauthorized", {status: 401});
         }
 
-        if(!label){
-            return new NextResponse("Nama banner perlu diinput", {status: 400});
+        if(!name){
+            return new NextResponse("Nama product perlu diinput", {status: 400});
+        }
+        
+        if(!images || !images.length){
+            return new NextResponse("Gambar product perlu diinput", {status: 400});
         }
 
-        if(!imageUrl){
-            return new NextResponse("Nama banner perlu diinput", {status: 400});
+        if(!price){
+            return new NextResponse("Harga product perlu diinput", {status: 400});
+        }
+
+        if(!categoryId){
+            return new NextResponse("Category ID perlu diinput", {status: 400});
         }
 
         if(!params.storeId){
@@ -42,18 +57,28 @@ export async function POST(
             return new NextResponse("Unauthorized", {status: 500})
         }
 
-        const banner = await db.banner.create({
+        const product = await db.product.create({
             data: {
-                label,
-                imageUrl,
-                storeId: params.storeId
-            }
-        })
+                name,
+                price,
+                categoryId,
+                isFeatured,
+                isArchived,
+                storeId: params.storeId,
+                images : {
+                    createMany: {
+                        data: [
+                            ...images.map((image: {url: string}) => image)
+                        ]
+                    }
+                }
+            },
+        });
 
-        return NextResponse.json(banner);
+        return NextResponse.json(product);
 
     } catch ( error ){
-        console.log("[BANNERS_POST]", error);
+        console.log("[PRODUCTS_POST]", error);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }
@@ -65,20 +90,35 @@ export async function GET(
     const params = await props.params;
 
     try {
+
+        const {searchParams} = new URL(req.url);
+        const categoryId = searchParams.get("categoryId") || undefined;
+        const isFeatured = searchParams.get("isFeatured");
+
         if(!params.storeId){
             return new NextResponse("Store id URL dibutuhkan")
         }
 
-        const banners = await db.banner.findMany({
+        const products = await db.product.findMany({
             where: {
                 storeId: params.storeId,
+                categoryId,
+                isFeatured: isFeatured ? true : undefined,
+                isArchived: false,
             },
-        })
+            include: {
+                images: true,
+                category: true,
+            },
+            orderBy: {
+                createdAt: "desc"
+            }
+        });
 
-        return NextResponse.json(banners);
+        return NextResponse.json(products);
 
     } catch ( error ){
-        console.log("[BANNERS_GET]", error);
+        console.log("[PRODUCTS_GET]", error);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }
