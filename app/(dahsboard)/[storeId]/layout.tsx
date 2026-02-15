@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 
 export const revalidate = 0;
 
+export const metadata = {
+    title: "Admin Toko"
+}
+
 export default async function DashboardLayout ({
     children,
     params,

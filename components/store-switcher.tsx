@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useEffect, useState } from "react"; // Tambahkan useEffect
 import { Store } from "@prisma/client";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { useStoreModal } from "@/hooks/use-store-modal";
@@ -24,6 +24,14 @@ const StoreSwitcher = ({
     const params = useParams();
     const router = useRouter();
 
+    // --- FIX HYDRATION ERROR ---
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+    // ---------------------------
+
     const formattedItems = items.map((item) => ({
         label: item.name,
         value: item.id
@@ -36,8 +44,12 @@ const StoreSwitcher = ({
     const onStoreSelect = (store: {value: string, label: string}) => {
         setOpen(false);
         router.push(`/${store.value}`);
-        router.refresh();
     };
+
+    // Jika belum mounted, jangan render apa-apa agar server & client sinkron
+    if (!isMounted) {
+        return null;
+    }
 
     return (
         <Popover open={open} onOpenChange={setOpen}>

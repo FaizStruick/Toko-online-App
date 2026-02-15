@@ -60,18 +60,19 @@ export async function POST(
 
 export async function GET(
     req: Request,
-    props : {params: Promise<{storeId: string}>}
+    {params}: {params: Promise<{storeId: string}>}
 ){
-    const params = await props.params;
-
+    
     try {
-        if(!params.storeId){
-            return new NextResponse("Store id URL dibutuhkan")
+        const { storeId } = await params; 
+
+        if(!storeId){
+            return new NextResponse("Store id URL dibutuhkan", {status: 400});
         }
 
         const categories = await db.category.findMany({
             where: {
-                storeId: params.storeId,
+                storeId: storeId,
             },
         })
 
